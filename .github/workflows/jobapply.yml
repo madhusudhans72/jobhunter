@@ -33,7 +33,7 @@ jobs:
         with:
           name: application-log
           path: applied_*.txt
-          
+
       - name: Commit applied_jobs.json and skipped logs if changed
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -45,10 +45,12 @@ jobs:
 
           mkdir -p logs/skipped
           mv skipped_manual_*.txt logs/skipped/ 2>/dev/null || true
-          git add applied_jobs.json logs/skipped/*.txt
+          git add applied_jobs.json || true
+          git add logs/skipped/*.txt 2>/dev/null || true
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
             git commit -m 'Update applied_jobs.json and skipped logs after applying jobs'
             git push origin HEAD:${{ github.ref }}
+          fi
