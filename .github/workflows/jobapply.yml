@@ -46,7 +46,11 @@ jobs:
           mkdir -p logs/skipped
           mv skipped_manual_*.txt logs/skipped/ 2>/dev/null || true
           git add applied_jobs.json || true
-          git add logs/skipped/*.txt 2>/dev/null || true
+
+          # Only add skipped logs if files exist
+          if find logs/skipped -name "*.txt" | grep -q .; then
+            git add logs/skipped/*.txt
+          fi
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
@@ -54,3 +58,4 @@ jobs:
             git commit -m 'Update applied_jobs.json and skipped logs after applying jobs'
             git push origin HEAD:${{ github.ref }}
           fi
+
