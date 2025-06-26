@@ -1,5 +1,6 @@
 import os
 import yaml
+import json
 import pdfplumber
 from datetime import datetime
 
@@ -26,6 +27,14 @@ if GPT_ENABLED:
 
 # Create a new log file per run
 log_filename = datetime.now().strftime("applied_%Y-%m-%d_%H-%M.txt")
+
+# Load previously applied jobs
+APPLIED_JOBS_FILE = "applied_jobs.json"
+if os.path.exists(APPLIED_JOBS_FILE):
+    with open(APPLIED_JOBS_FILE, "r") as f:
+        applied_jobs = set(json.load(f))
+else:
+    applied_jobs = set()
 
 # Dummy job fetcher (replace with real scraping)
 def fetch_jobs():
@@ -66,6 +75,9 @@ def should_apply(job):
     company = job["company"].lower()
     if any(word.lower() in company for word in config["exclude_companies"]):
         return False
+    if job["url"] in applied_jobs:
+        print(f"Skipping already applied job: {job['title']} at {job['company']}")
+        return False
     return any(k.lower() in title for k in config["job_keywords"])
 
 def apply_to_job(job):
@@ -83,6 +95,11 @@ def apply_to_job(job):
         log.write("Generated Cover Letter:\n")
         log.write(cover_letter + "\n")
         log.write("="*50 + "\n\n")
+
+    # Add to applied list and save
+    applied_jobs.add(job["url"])
+    with open(APPLIED_JOBS_FILE, "w") as f:
+        json.dump(list(applied_jobs), f, indent=2)
 
 def main():
     jobs = fetch_jobs()
