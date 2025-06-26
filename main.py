@@ -170,10 +170,18 @@ def log_skipped_job(job, reason="Could not auto-apply"):
 
 def main():
     jobs = fetch_jobs_from_indeed()
+    applied_count = 0
+    max_to_apply = 10
+
     for job in jobs:
+        if applied_count >= max_to_apply:
+            print(f"[Limit Reached] Applied to {applied_count} jobs. Stopping.")
+            break
+
         if should_apply(job):
             try:
                 apply_to_job(job)
+                applied_count += 1
             except Exception as e:
                 print(f"[!] Failed to auto-apply: {job['title']} at {job['company']}. Logging for manual.")
                 log_skipped_job(job, reason=str(e))
