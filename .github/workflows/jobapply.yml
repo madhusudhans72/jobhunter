@@ -1,14 +1,17 @@
-name: Auto Job Apply
+name: Auto Apply Jobs
 
 on:
-  schedule:
-    - cron: "0 12 * * *"
   workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"  # runs daily at 8:30 AM IST
+
 jobs:
   apply:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -30,3 +33,15 @@ jobs:
         with:
           name: application-log
           path: applied_*.txt
+
+      - name: Commit applied_jobs.json if changed
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git pull
+          git add applied_jobs.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update applied_jobs.json after applying jobs"
+            git push
