@@ -25,8 +25,10 @@ if GPT_ENABLED:
     with open("prompts/cover_letter.txt") as f:
         prompt_template = f.read()
 
-# Create a new log file per run
-log_filename = datetime.now().strftime("applied_%Y-%m-%d_%H-%M.txt")
+# Create log files
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+log_filename = f"applied_{timestamp}.txt"
+skipped_log_filename = f"skipped_manual_{timestamp}.txt"
 
 # Load previously applied jobs
 APPLIED_JOBS_FILE = "applied_jobs.json"
@@ -54,6 +56,14 @@ def fetch_jobs():
             "salary": "Not disclosed",
             "description": "Join our cloud infra team...",
             "url": "https://example.com/job2"
+        },
+        {
+            "title": "SDE II",
+            "company": "FreshTech",
+            "location": "Remote",
+            "salary": "",
+            "description": "Looking for SDE II with 3+ years of experience.",
+            "url": "https://example.com/job3"
         }
     ]
 
@@ -101,11 +111,27 @@ def apply_to_job(job):
     with open(APPLIED_JOBS_FILE, "w") as f:
         json.dump(list(applied_jobs), f, indent=2)
 
+def log_skipped_job(job, reason="Could not auto-apply"):
+    with open(skipped_log_filename, "a") as log:
+        log.write("="*50 + "\n")
+        log.write(f"[SKIPPED - {reason}]\n")
+        log.write(f"Job Title: {job['title']}\n")
+        log.write(f"Company: {job['company']}\n")
+        log.write(f"Location: {job.get('location', 'N/A')}\n")
+        log.write(f"Salary: {job.get('salary', 'N/A')}\n")
+        log.write(f"URL: {job['url']}\n")
+        log.write(f"Description: {job['description']}\n")
+        log.write("="*50 + "\n\n")
+
 def main():
     jobs = fetch_jobs()
     for job in jobs:
         if should_apply(job):
-            apply_to_job(job)
+            try:
+                apply_to_job(job)
+            except Exception as e:
+                print(f"[!] Failed to auto-apply: {job['title']} at {job['company']}. Logging for manual.")
+                log_skipped_job(job, reason=str(e))
 
 if __name__ == "__main__":
     main()
