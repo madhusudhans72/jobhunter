@@ -170,8 +170,13 @@ def log_skipped_job(job, reason="Could not auto-apply"):
 
 def main():
     jobs = fetch_jobs_from_indeed()
+    
+    print(f"\n🧠 Found {len(jobs)} jobs in total:\n")
+    for idx, job in enumerate(jobs, 1):
+        print(f"{idx}. {job['title']} at {job['company']} — {job['location']} — {job['url']}")
+
     applied_count = 0
-    max_to_apply = 10
+    max_to_apply = config.get("limits", {}).get("max_applications_per_run", 10)
 
     for job in jobs:
         if applied_count >= max_to_apply:
