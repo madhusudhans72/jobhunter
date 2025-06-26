@@ -1,35 +1,50 @@
-## main.py
 import os
-import requests
 import yaml
-import openai
 import pdfplumber
-from bs4 import BeautifulSoup
+from openai import OpenAI
+from datetime import datetime
 
 # Load config
 with open("config.yaml") as f:
     config = yaml.safe_load(f)
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-# Placeholder function for job scraping (replace with real logic)
-def fetch_jobs():
-    return [
-        {"title": "Python Developer", "company": "Acme Corp", "description": "We need a Python dev...", "url": "https://example.com/job1"},
-        {"title": "DevOps Engineer", "company": "bottomline", "description": "Cloud and infra role", "url": "https://example.com/job2"}
-    ]
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Read your resume text
 with pdfplumber.open("resume.pdf") as pdf:
     resume_text = "\n".join(page.extract_text() for page in pdf.pages if page.extract_text())
 
-# Load GPT prompt
+# Load GPT prompt template
 with open("prompts/cover_letter.txt") as f:
     prompt_template = f.read()
 
+# Create a new log file per run
+log_filename = datetime.now().strftime("applied_%Y-%m-%d_%H-%M.txt")
+
+# Dummy job fetcher (replace with real scraping)
+def fetch_jobs():
+    return [
+        {
+            "title": "Python Developer",
+            "company": "Acme Corp",
+            "location": "New York, NY",
+            "salary": "$120,000",
+            "description": "We are hiring Python developers to work on web backends.",
+            "url": "https://example.com/job1"
+        },
+        {
+            "title": "DevOps Engineer",
+            "company": "bottomline",
+            "location": "Remote",
+            "salary": "Not disclosed",
+            "description": "Join our cloud infra team...",
+            "url": "https://example.com/job2"
+        }
+    ]
+
 def generate_cover_letter(job):
     prompt = prompt_template.replace("[JOB_DESCRIPTION]", job["description"]).replace("[YOUR_NAME]", "Your Name")
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}]
     )
@@ -38,15 +53,25 @@ def generate_cover_letter(job):
 def should_apply(job):
     title = job["title"].lower()
     company = job["company"].lower()
-    if any(word in company for word in config["exclude_companies"]):
+    if any(word.lower() in company for word in config["exclude_companies"]):
         return False
     return any(k.lower() in title for k in config["job_keywords"])
 
 def apply_to_job(job):
     print(f"Applying to: {job['title']} at {job['company']}")
-    # cover_letter = generate_cover_letter(job)
-    # Placeholder: Replace with API form submission or email logic
-    # print("Generated Cover Letter:\n", cover_letter[:500], "...\n")
+    cover_letter = generate_cover_letter(job)
+    
+    # Write to log file
+    with open(log_filename, "a") as log:
+        log.write("="*50 + "\n")
+        log.write(f"Job Title: {job['title']}\n")
+        log.write(f"Company: {job['company']}\n")
+        log.write(f"Location: {job.get('location', 'N/A')}\n")
+        log.write(f"Salary: {job.get('salary', 'N/A')}\n")
+        log.write(f"URL: {job['url']}\n\n")
+        log.write("Generated Cover Letter:\n")
+        log.write(cover_letter + "\n")
+        log.write("="*50 + "\n\n")
 
 def main():
     jobs = fetch_jobs()
@@ -56,4 +81,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
