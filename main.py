@@ -2,7 +2,7 @@
 import os
 import requests
 import yaml
-import openai
+# import openai
 import pdfplumber
 from bs4 import BeautifulSoup
 
@@ -44,9 +44,9 @@ def should_apply(job):
 
 def apply_to_job(job):
     print(f"Applying to: {job['title']} at {job['company']}")
-    cover_letter = generate_cover_letter(job)
+    # cover_letter = generate_cover_letter(job)
     # Placeholder: Replace with API form submission or email logic
-    print("Generated Cover Letter:\n", cover_letter[:500], "...\n")
+    # print("Generated Cover Letter:\n", cover_letter[:500], "...\n")
 
 def main():
     jobs = fetch_jobs()
