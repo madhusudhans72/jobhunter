@@ -2,7 +2,7 @@
 import os
 import requests
 import yaml
-# import openai
+import openai
 import pdfplumber
 from bs4 import BeautifulSoup
 
