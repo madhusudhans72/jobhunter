@@ -83,11 +83,22 @@ def generate_cover_letter(job):
 def should_apply(job):
     title = job["title"].lower()
     company = job["company"].lower()
+
     if any(word.lower() in company for word in config["exclude_companies"]):
         return False
+
     if job["url"] in applied_jobs:
         print(f"Skipping already applied job: {job['title']} at {job['company']}")
         return False
+
+    # Salary filter
+    salary = job.get("salary", "").strip()
+    allow_missing_salary = config.get("filters", {}).get("apply_if_salary_missing", True)
+    if not salary or salary.lower() == "not disclosed":
+        if not allow_missing_salary:
+            print(f"Skipping due to missing salary: {job['title']} at {job['company']}")
+            return False
+
     return any(k.lower() in title for k in config["job_keywords"])
 
 def apply_to_job(job):
