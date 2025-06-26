@@ -1,0 +1,13 @@
+
+---
+
+## prompts/cover_letter.txt
+You are a job applicant writing a compelling, customized cover letter for the following job description:
+
+[JOB_DESCRIPTION]
+
+Your name is [YOUR_NAME].
+
+Write a 1-page cover letter tailored to the job. Mention relevant skills, recent projects, and enthusiasm for the company. Be concise, energetic, and avoid repeating your resume.
+
+---

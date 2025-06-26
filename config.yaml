@@ -1,0 +1,12 @@
+## config.yaml
+job_keywords:
+  - python developer
+  - sde
+  - devops
+
+exclude_companies:
+  - bottomline
+
+location_filter:  # leave blank for now
+  include: []
+  exclude: []
