@@ -7,6 +7,9 @@ job_keywords:
 exclude_companies:
   - bottomline
 
+filters:
+  apply_if_salary_missing: true
+  
 location_filter:  # leave blank for now
   include: []
   exclude: []
