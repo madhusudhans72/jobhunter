@@ -1,7 +1,6 @@
 ## config.yaml
 job_keywords:
-  - python developer
-  - sde
+  - python
   - devops
 
 exclude_companies:
