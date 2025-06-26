@@ -21,7 +21,7 @@ with open("config.yaml") as f:
     config = yaml.safe_load(f)
 
 # Read your resume text
-with pdfplumber.open("resume.pdf") as pdf:
+with pdfplumber.open("Madhusudhan__Devops__resume.pdf") as pdf:
     resume_text = "\n".join(page.extract_text() for page in pdf.pages if page.extract_text())
 
 # Load GPT prompt template
