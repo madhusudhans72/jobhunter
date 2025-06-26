@@ -1,8 +1,12 @@
 import os
 import yaml
 import json
+import time
+import random
 import pdfplumber
 from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
 
 try:
     from openai import OpenAI
@@ -38,34 +42,64 @@ if os.path.exists(APPLIED_JOBS_FILE):
 else:
     applied_jobs = set()
 
-# Dummy job fetcher (replace with real scraping)
-def fetch_jobs():
-    return [
-        {
-            "title": "Python Developer",
-            "company": "Acme Corp",
-            "location": "New York, NY",
-            "salary": "$120,000",
-            "description": "We are hiring Python developers to work on web backends.",
-            "url": "https://example.com/job1"
-        },
-        {
-            "title": "DevOps Engineer",
-            "company": "bottomline",
-            "location": "Remote",
-            "salary": "Not disclosed",
-            "description": "Join our cloud infra team...",
-            "url": "https://example.com/job2"
-        },
-        {
-            "title": "SDE II",
-            "company": "FreshTech",
-            "location": "Remote",
-            "salary": "",
-            "description": "Looking for SDE II with 3+ years of experience.",
-            "url": "https://example.com/job3"
-        }
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+}
+
+# Scraper for Indeed
+
+def fetch_jobs_from_indeed(max_pages=3):
+    base_urls = [
+        "https://in.indeed.com/jobs?q={query}&start={start}",  # India
+        "https://www.indeed.com/jobs?q={query}&remotejob=1&start={start}",  # Remote global
+        "https://www.indeed.com/jobs?q={query}&start={start}"  # Global
     ]
+
+    jobs = []
+    seen_urls = set()
+
+    for keyword in config["job_keywords"]:
+        encoded_keyword = keyword.replace(" ", "+")
+
+        for base_url in base_urls:
+            for page in range(max_pages):
+                start = page * 10
+                url = base_url.format(query=encoded_keyword, start=start)
+
+                try:
+                    resp = requests.get(url, headers=HEADERS, timeout=10)
+                    soup = BeautifulSoup(resp.text, "html.parser")
+
+                    for card in soup.select(".job_seen_beacon"):
+                        title = card.select_one("h2 span")
+                        company = card.select_one("span.companyName")
+                        location = card.select_one("div.companyLocation")
+                        salary = card.select_one("div.metadata.salary-snippet-container")
+                        desc = card.select_one("div.job-snippet")
+                        link = card.select_one("a")
+
+                        if not (title and company and link):
+                            continue
+
+                        job_url = "https://in.indeed.com" + link["href"]
+                        if job_url in seen_urls:
+                            continue
+
+                        jobs.append({
+                            "title": title.text.strip(),
+                            "company": company.text.strip(),
+                            "location": location.text.strip() if location else "",
+                            "salary": salary.text.strip() if salary else "Not disclosed",
+                            "description": desc.text.strip() if desc else "",
+                            "url": job_url
+                        })
+                        seen_urls.add(job_url)
+
+                    time.sleep(random.uniform(2, 5))
+                except Exception as e:
+                    print(f"[!] Failed to fetch page: {url}\nReason: {str(e)}")
+
+    return jobs
 
 def generate_cover_letter(job):
     if not GPT_ENABLED:
@@ -135,7 +169,7 @@ def log_skipped_job(job, reason="Could not auto-apply"):
         log.write("="*50 + "\n\n")
 
 def main():
-    jobs = fetch_jobs()
+    jobs = fetch_jobs_from_indeed()
     for job in jobs:
         if should_apply(job):
             try:
